@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Copy, CheckCircle2, Boxes, Database, LogOut, Server } from "lucide-react";
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
+import { useClerk } from "@clerk/nextjs";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 
 type SetupCommand = {
@@ -77,15 +77,14 @@ const backendBuildingBlocks = [
 
 export default function Home() {
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
-  const { user, isAuthenticated, isLoading, refresh } = useCurrentUser();
+  const { user, isAuthenticated, isLoading } = useCurrentUser();
+  const { signOut } = useClerk();
   const router = useRouter();
 
   const handleSignOut = useCallback(async () => {
-    const supabase = getSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    await refresh();
+    await signOut();
     router.replace("/");
-  }, [refresh, router]);
+  }, [signOut, router]);
 
   const authActions = useMemo(() => {
     if (isLoading) {

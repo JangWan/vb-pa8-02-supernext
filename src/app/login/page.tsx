@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
+import { useSignIn } from "@clerk/nextjs";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 
 type LoginPageProps = {
@@ -15,14 +15,17 @@ export default function LoginPage({ params }: LoginPageProps) {
   void params;
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { refresh, isAuthenticated } = useCurrentUser();
+  const { isAuthenticated } = useCurrentUser();
+  const { signIn, fetchStatus } = useSignIn();
   const [formState, setFormState] = useState({ email: "", password: "" });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
-      const redirectedFrom = searchParams.get("redirectedFrom") ?? "/";
+      const redirectedFrom =
+        searchParams.get("redirect_url") ??
+        searchParams.get("redirectedFrom") ??
+        "/";
       router.replace(redirectedFrom);
     }
   }, [isAuthenticated, router, searchParams]);
@@ -38,46 +41,50 @@ export default function LoginPage({ params }: LoginPageProps) {
   const handleSubmit = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      setIsSubmitting(true);
       setErrorMessage(null);
-      const supabase = getSupabaseBrowserClient();
 
-      try {
-        const result = await supabase.auth.signInWithPassword({
-          email: formState.email,
-          password: formState.password,
+      const { error } = await signIn.password({
+        identifier: formState.email,
+        password: formState.password,
+      });
+
+      if (error) {
+        setErrorMessage(error.message ?? "로그인에 실패했습니다.");
+        return;
+      }
+
+      if (signIn.status === "complete") {
+        await signIn.finalize({
+          navigate: ({ decorateUrl }) => {
+            const redirectedFrom =
+              searchParams.get("redirect_url") ??
+              searchParams.get("redirectedFrom") ??
+              "/";
+            const url = decorateUrl(redirectedFrom);
+            if (url.startsWith("http")) {
+              window.location.href = url;
+            } else {
+              router.replace(url);
+            }
+          },
         });
-
-        const nextAction = result.error
-          ? result.error.message ?? "로그인에 실패했습니다."
-          : ("success" as const);
-
-        if (nextAction === "success") {
-          await refresh();
-          const redirectedFrom = searchParams.get("redirectedFrom") ?? "/";
-          router.replace(redirectedFrom);
-        } else {
-          setErrorMessage(nextAction);
-        }
-      } catch (error) {
-        setErrorMessage("로그인 처리 중 오류가 발생했습니다.");
-      } finally {
-        setIsSubmitting(false);
       }
     },
-    [formState.email, formState.password, refresh, router, searchParams]
+    [formState.email, formState.password, signIn, router, searchParams]
   );
 
   if (isAuthenticated) {
     return null;
   }
 
+  const isSubmitting = fetchStatus === "fetching";
+
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center justify-center gap-10 px-6 py-16">
       <header className="flex flex-col items-center gap-3 text-center">
         <h1 className="text-3xl font-semibold">로그인</h1>
         <p className="text-slate-500">
-          Supabase 계정으로 로그인하고 보호된 페이지에 접근하세요.
+          계정으로 로그인하고 보호된 페이지에 접근하세요.
         </p>
       </header>
       <div className="grid w-full gap-8 md:grid-cols-2">

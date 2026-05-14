@@ -47,7 +47,9 @@ next-env.d.ts
 /.ruler
 /temp
 .mcp.json
+skills-lock.json
 
+/.agents
 /.claude
 GEMINI.md
 

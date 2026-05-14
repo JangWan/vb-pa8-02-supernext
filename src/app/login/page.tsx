@@ -82,13 +82,8 @@ function LoginContent() {
       }
 
       if (signIn.status === "needs_second_factor") {
-        const emailFactor = signIn.supportedSecondFactors?.find(
-          (f) => f.strategy === "email_code"
-        );
-        if (emailFactor) {
-          await signIn.prepareSecondFactor({ strategy: "email_code" });
-          setInfoMessage("이메일로 인증 코드를 전송했습니다.");
-        }
+        await signIn.mfa.sendEmailCode();
+        setInfoMessage("이메일로 인증 코드를 전송했습니다.");
         setStep("mfa");
       }
     },
@@ -100,10 +95,7 @@ function LoginContent() {
       event.preventDefault();
       setErrorMessage(null);
 
-      const { error } = await signIn.attemptSecondFactor({
-        strategy: "email_code",
-        code: mfaCode,
-      });
+      const { error } = await signIn.mfa.verifyEmailCode({ code: mfaCode });
 
       if (error) {
         setErrorMessage(error.message ?? "인증에 실패했습니다.");
@@ -119,7 +111,7 @@ function LoginContent() {
 
   const handleResendMfa = useCallback(async () => {
     setErrorMessage(null);
-    await signIn.prepareSecondFactor({ strategy: "email_code" });
+    await signIn.mfa.sendEmailCode();
     setInfoMessage("인증 코드를 재전송했습니다.");
   }, [signIn]);
 

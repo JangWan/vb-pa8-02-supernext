@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Copy, CheckCircle2, Boxes, Database, LogOut, Server } from "lucide-react";
-import { useClerk } from "@clerk/nextjs";
+import { Copy, CheckCircle2, Boxes, Database, Server } from "lucide-react";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
+import { UserAvatarButton } from "@/features/user-profile/components/UserAvatarButton";
 
 type SetupCommand = {
   id: string;
@@ -77,42 +76,23 @@ const backendBuildingBlocks = [
 
 export default function Home() {
   const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
-  const { user, isAuthenticated, isLoading } = useCurrentUser();
-  const { signOut } = useClerk();
-  const router = useRouter();
-
-  const handleSignOut = useCallback(async () => {
-    await signOut();
-    router.replace("/");
-  }, [signOut, router]);
+  const { isAuthenticated, isLoading } = useCurrentUser();
 
   const authActions = useMemo(() => {
     if (isLoading) {
-      return (
-        <span className="text-sm text-slate-300">세션 확인 중...</span>
-      );
+      return <span className="text-sm text-slate-300">세션 확인 중...</span>;
     }
 
-    if (isAuthenticated && user) {
+    if (isAuthenticated) {
       return (
-        <div className="flex items-center gap-3 text-sm text-slate-200">
-          <span className="truncate">{user.email ?? "알 수 없는 사용자"}</span>
-          <div className="flex items-center gap-2">
-            <Link
-              href="/dashboard"
-              className="rounded-md border border-slate-600 px-3 py-1 transition hover:border-slate-400 hover:bg-slate-800"
-            >
-              대시보드
-            </Link>
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="flex items-center gap-1 rounded-md bg-slate-100 px-3 py-1 text-slate-900 transition hover:bg-white"
-            >
-              <LogOut className="h-4 w-4" />
-              로그아웃
-            </button>
-          </div>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard"
+            className="rounded-md border border-slate-600 px-3 py-1 text-sm text-slate-200 transition hover:border-slate-400 hover:bg-slate-800"
+          >
+            대시보드
+          </Link>
+          <UserAvatarButton />
         </div>
       );
     }
@@ -133,7 +113,7 @@ export default function Home() {
         </Link>
       </div>
     );
-  }, [handleSignOut, isAuthenticated, isLoading, user]);
+  }, [isAuthenticated, isLoading]);
 
   const handleCopy = (command: string) => {
     navigator.clipboard.writeText(command);

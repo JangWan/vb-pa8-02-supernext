@@ -6,7 +6,6 @@ import {
 } from '@/backend/http/response';
 import {
   getLogger,
-  getSupabase,
   type AppEnv,
 } from '@/backend/hono/context';
 import { ExampleParamsSchema } from '@/features/example/backend/schema';
@@ -32,10 +31,8 @@ export const registerExampleRoutes = (app: Hono<AppEnv>) => {
       );
     }
 
-    const supabase = getSupabase(c);
     const logger = getLogger(c);
-
-    const result = await getExampleById(supabase, parsedParams.data.id);
+    const result = await getExampleById(parsedParams.data.id);
 
     if (!result.ok) {
       const errorResult = result as ErrorResult<ExampleServiceError, unknown>;

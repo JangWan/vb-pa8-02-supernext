@@ -1,18 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSignIn } from "@clerk/nextjs";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 
-type LoginPageProps = {
-  params: Promise<Record<string, never>>;
-};
-
-export default function LoginPage({ params }: LoginPageProps) {
-  void params;
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated } = useCurrentUser();
@@ -148,5 +143,13 @@ export default function LoginPage({ params }: LoginPageProps) {
         </figure>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   );
 }

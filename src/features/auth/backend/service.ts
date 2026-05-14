@@ -1,4 +1,6 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { eq } from 'drizzle-orm';
+import { db } from '@/backend/db';
+import { users } from '@/backend/db/schema';
 
 type UpsertUserParams = {
   clerkId: string;
@@ -8,36 +10,28 @@ type UpsertUserParams = {
   imageUrl: string | null;
 };
 
-export const upsertUser = async (
-  supabase: SupabaseClient,
-  params: UpsertUserParams
-) => {
-  const { error } = await supabase.from("users").upsert(
-    {
-      clerk_id: params.clerkId,
+export const upsertUser = async (params: UpsertUserParams) => {
+  await db
+    .insert(users)
+    .values({
+      clerkId: params.clerkId,
       email: params.email,
-      first_name: params.firstName,
-      last_name: params.lastName,
-      image_url: params.imageUrl,
-    },
-    { onConflict: "clerk_id" }
-  );
-
-  if (error) {
-    throw new Error(`사용자 동기화 실패: ${error.message}`);
-  }
+      firstName: params.firstName,
+      lastName: params.lastName,
+      imageUrl: params.imageUrl,
+    })
+    .onConflictDoUpdate({
+      target: users.clerkId,
+      set: {
+        email: params.email,
+        firstName: params.firstName,
+        lastName: params.lastName,
+        imageUrl: params.imageUrl,
+        updatedAt: new Date(),
+      },
+    });
 };
 
-export const deleteUser = async (
-  supabase: SupabaseClient,
-  clerkId: string
-) => {
-  const { error } = await supabase
-    .from("users")
-    .delete()
-    .eq("clerk_id", clerkId);
-
-  if (error) {
-    throw new Error(`사용자 삭제 실패: ${error.message}`);
-  }
+export const deleteUser = async (clerkId: string) => {
+  await db.delete(users).where(eq(users.clerkId, clerkId));
 };

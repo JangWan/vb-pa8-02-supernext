@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -13,12 +13,7 @@ const defaultFormState = {
   confirmPassword: "",
 };
 
-type SignupPageProps = {
-  params: Promise<Record<string, never>>;
-};
-
-export default function SignupPage({ params }: SignupPageProps) {
-  void params;
+function SignupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated } = useCurrentUser();
@@ -266,5 +261,13 @@ export default function SignupPage({ params }: SignupPageProps) {
         </figure>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupContent />
+    </Suspense>
   );
 }

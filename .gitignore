@@ -51,6 +51,8 @@ next-env.d.ts
 /.claude
 GEMINI.md
 
+/docs
+
 # START Ruler Generated Files
 /CLAUDE.md
 /CLAUDE.md.bak

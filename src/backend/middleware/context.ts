@@ -1,5 +1,4 @@
 import { createMiddleware } from 'hono/factory';
-import { getAppConfig } from '@/backend/config';
 import {
   contextKeys,
   type AppEnv,
@@ -13,13 +12,8 @@ const logger: AppLogger = {
   debug: (...args) => console.debug(...args),
 };
 
-export const withAppContext = () => {
-  const config = getAppConfig();
-
-  return createMiddleware<AppEnv>(async (c, next) => {
+export const withAppContext = () =>
+  createMiddleware<AppEnv>(async (c, next) => {
     c.set(contextKeys.logger, logger);
-    c.set(contextKeys.config, config);
-
     await next();
   });
-};

@@ -1,4 +1,6 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { eq } from 'drizzle-orm';
+import { db } from '@/backend/db';
+import { example } from '@/backend/db/schema';
 import {
   failure,
   success,
@@ -6,68 +8,57 @@ import {
 } from '@/backend/http/response';
 import {
   ExampleResponseSchema,
-  ExampleTableRowSchema,
   type ExampleResponse,
-  type ExampleRow,
 } from '@/features/example/backend/schema';
 import {
   exampleErrorCodes,
   type ExampleServiceError,
 } from '@/features/example/backend/error';
 
-const EXAMPLE_TABLE = 'example';
-
 const fallbackAvatar = (id: string) =>
   `https://picsum.photos/seed/${encodeURIComponent(id)}/200/200`;
 
 export const getExampleById = async (
-  client: SupabaseClient,
   id: string,
 ): Promise<HandlerResult<ExampleResponse, ExampleServiceError, unknown>> => {
-  const { data, error } = await client
-    .from(EXAMPLE_TABLE)
-    .select('id, full_name, avatar_url, bio, updated_at')
-    .eq('id', id)
-    .maybeSingle<ExampleRow>();
+  try {
+    const rows = await db
+      .select()
+      .from(example)
+      .where(eq(example.id, id))
+      .limit(1);
 
-  if (error) {
-    return failure(500, exampleErrorCodes.fetchError, error.message);
-  }
+    const row = rows[0];
 
-  if (!data) {
-    return failure(404, exampleErrorCodes.notFound, 'Example not found');
-  }
+    if (!row) {
+      return failure(404, exampleErrorCodes.notFound, 'Example not found');
+    }
 
-  const rowParse = ExampleTableRowSchema.safeParse(data);
+    const mapped = {
+      id: row.id,
+      fullName: row.fullName ?? 'Anonymous User',
+      avatarUrl: row.avatarUrl ?? fallbackAvatar(row.id),
+      bio: row.bio,
+      updatedAt: row.updatedAt.toISOString(),
+    } satisfies ExampleResponse;
 
-  if (!rowParse.success) {
+    const parsed = ExampleResponseSchema.safeParse(mapped);
+
+    if (!parsed.success) {
+      return failure(
+        500,
+        exampleErrorCodes.validationError,
+        'Example payload failed validation.',
+        parsed.error.format(),
+      );
+    }
+
+    return success(parsed.data);
+  } catch (e) {
     return failure(
       500,
-      exampleErrorCodes.validationError,
-      'Example row failed validation.',
-      rowParse.error.format(),
+      exampleErrorCodes.fetchError,
+      e instanceof Error ? e.message : 'Unknown error',
     );
   }
-
-  const mapped = {
-    id: rowParse.data.id,
-    fullName: rowParse.data.full_name ?? 'Anonymous User',
-    avatarUrl:
-      rowParse.data.avatar_url ?? fallbackAvatar(rowParse.data.id),
-    bio: rowParse.data.bio,
-    updatedAt: rowParse.data.updated_at,
-  } satisfies ExampleResponse;
-
-  const parsed = ExampleResponseSchema.safeParse(mapped);
-
-  if (!parsed.success) {
-    return failure(
-      500,
-      exampleErrorCodes.validationError,
-      'Example payload failed validation.',
-      parsed.error.format(),
-    );
-  }
-
-  return success(parsed.data);
 };

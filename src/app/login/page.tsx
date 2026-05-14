@@ -66,25 +66,44 @@ function LoginContent() {
       event.preventDefault();
       setErrorMessage(null);
 
-      const { error } = await signIn.password({
-        identifier: formState.email,
-        password: formState.password,
-      });
+      try {
+        const { error } = await signIn.password({
+          emailAddress: formState.email,
+          password: formState.password,
+        });
 
-      if (error) {
-        setErrorMessage(error.message ?? "로그인에 실패했습니다.");
-        return;
-      }
+        if (error) {
+          setErrorMessage(error.message ?? "로그인에 실패했습니다.");
+          return;
+        }
 
-      if (signIn.status === "complete") {
-        await signIn.finalize({ navigate: ({ decorateUrl }) => finalizeSignIn(decorateUrl) });
-        return;
-      }
+        if (signIn.status === "complete") {
+          await signIn.finalize({ navigate: ({ decorateUrl }) => finalizeSignIn(decorateUrl) });
+          return;
+        }
 
-      if (signIn.status === "needs_second_factor") {
-        await signIn.mfa.sendEmailCode();
-        setInfoMessage("이메일로 인증 코드를 전송했습니다.");
-        setStep("mfa");
+        if (signIn.status === "needs_second_factor") {
+          await signIn.mfa.sendEmailCode();
+          setInfoMessage("이메일로 인증 코드를 전송했습니다.");
+          setStep("mfa");
+          return;
+        }
+
+        if (signIn.status === "needs_client_trust") {
+          const emailFactor = signIn.supportedSecondFactors.find(
+            (f) => f.strategy === "email_code"
+          );
+          if (emailFactor) {
+            await signIn.mfa.sendEmailCode();
+            setInfoMessage("이메일로 인증 코드를 전송했습니다.");
+            setStep("mfa");
+          }
+          return;
+        }
+
+        setErrorMessage(`로그인 처리 중 오류가 발생했습니다. (status: ${signIn.status})`);
+      } catch (e) {
+        setErrorMessage(e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.");
       }
     },
     [formState.email, formState.password, signIn, finalizeSignIn]
@@ -95,15 +114,22 @@ function LoginContent() {
       event.preventDefault();
       setErrorMessage(null);
 
-      const { error } = await signIn.mfa.verifyEmailCode({ code: mfaCode });
+      try {
+        const { error } = await signIn.mfa.verifyEmailCode({ code: mfaCode });
 
-      if (error) {
-        setErrorMessage(error.message ?? "인증에 실패했습니다.");
-        return;
-      }
+        if (error) {
+          setErrorMessage(error.message ?? "인증에 실패했습니다.");
+          return;
+        }
 
-      if (signIn.status === "complete") {
-        await signIn.finalize({ navigate: ({ decorateUrl }) => finalizeSignIn(decorateUrl) });
+        if (signIn.status === "complete") {
+          await signIn.finalize({ navigate: ({ decorateUrl }) => finalizeSignIn(decorateUrl) });
+          return;
+        }
+
+        setErrorMessage(`인증 처리 중 오류가 발생했습니다. (status: ${signIn.status})`);
+      } catch (e) {
+        setErrorMessage(e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.");
       }
     },
     [signIn, mfaCode, finalizeSignIn]
@@ -111,8 +137,12 @@ function LoginContent() {
 
   const handleResendMfa = useCallback(async () => {
     setErrorMessage(null);
-    await signIn.mfa.sendEmailCode();
-    setInfoMessage("인증 코드를 재전송했습니다.");
+    try {
+      await signIn.mfa.sendEmailCode();
+      setInfoMessage("인증 코드를 재전송했습니다.");
+    } catch (e) {
+      setErrorMessage(e instanceof Error ? e.message : "재전송에 실패했습니다.");
+    }
   }, [signIn]);
 
   if (isAuthenticated) {

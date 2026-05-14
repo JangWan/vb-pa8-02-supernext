@@ -3,6 +3,7 @@ import { errorBoundary } from '@/backend/middleware/error';
 import { withAppContext } from '@/backend/middleware/context';
 import { registerExampleRoutes } from '@/features/example/backend/route';
 import { registerUserProfileRoutes } from '@/features/user-profile/backend/route';
+import { registerDashboardRoutes } from '@/features/dashboard/backend/route';
 import type { AppEnv } from '@/backend/hono/context';
 
 let singletonApp: Hono<AppEnv> | null = null;
@@ -19,6 +20,7 @@ export const createHonoApp = () => {
 
   registerExampleRoutes(app);
   registerUserProfileRoutes(app);
+  registerDashboardRoutes(app);
 
   app.notFound((c) => {
     return c.json(

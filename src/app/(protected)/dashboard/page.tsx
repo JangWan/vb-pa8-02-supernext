@@ -1,7 +1,13 @@
 "use client";
 
-import Image from "next/image";
+import { LayoutDashboard } from "lucide-react";
+import { UserAvatarButton } from "@/features/user-profile/components/UserAvatarButton";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
+import { UserInfoPanel } from "@/features/dashboard/components/UserInfoPanel";
+import { SystemInfoPanel } from "@/features/dashboard/components/SystemInfoPanel";
+import { WebInfoPanel } from "@/features/dashboard/components/WebInfoPanel";
+import { DatabaseInfoPanel } from "@/features/dashboard/components/DatabaseInfoPanel";
+import { ServiceStatusPanel } from "@/features/dashboard/components/ServiceStatusPanel";
 
 type DashboardPageProps = {
   params: Promise<Record<string, never>>;
@@ -12,37 +18,31 @@ export default function DashboardPage({ params }: DashboardPageProps) {
   const { user } = useCurrentUser();
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-12">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold">대시보드</h1>
-        <p className="text-slate-500">
-          {user?.email ?? "알 수 없는 사용자"} 님, 환영합니다.
-        </p>
-      </header>
-      <div className="overflow-hidden rounded-xl border border-slate-200">
-        <Image
-          alt="대시보드"
-          src="https://picsum.photos/seed/dashboard/960/420"
-          width={960}
-          height={420}
-          className="h-auto w-full object-cover"
-        />
+    <div className="min-h-screen bg-slate-50">
+      <div className="border-b border-slate-200 bg-white px-6 py-4 shadow-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <LayoutDashboard className="h-5 w-5 text-indigo-500" />
+            <h1 className="text-lg font-semibold text-slate-800">시스템 대시보드</h1>
+          </div>
+          <div className="flex items-center gap-3 text-sm text-slate-500">
+            <span>{user?.email}</span>
+            <UserAvatarButton />
+          </div>
+        </div>
       </div>
-      <section className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-lg border border-slate-200 p-4">
-          <h2 className="text-lg font-medium">현재 세션</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            Supabase 미들웨어가 세션 쿠키를 자동으로 동기화합니다.
-          </p>
-        </article>
-        <article className="rounded-lg border border-slate-200 p-4">
-          <h2 className="text-lg font-medium">보안 체크</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            보호된 App Router 세그먼트로 라우팅되며, 로그인 사용
-            자만 접근할 수 있습니다.
-          </p>
-        </article>
-      </section>
+
+      <div className="mx-auto max-w-7xl px-6 py-6">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
+          <UserInfoPanel />
+          <ServiceStatusPanel />
+          <WebInfoPanel />
+          <DatabaseInfoPanel />
+          <div className="xl:col-span-2">
+            <SystemInfoPanel />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

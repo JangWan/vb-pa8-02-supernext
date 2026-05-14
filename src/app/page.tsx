@@ -16,6 +16,11 @@ import {
   Boxes,
   Key,
   Zap,
+  User,
+  Monitor,
+  Activity,
+  Lock,
+  ArrowRight,
 } from "lucide-react";
 import { useCurrentUser } from "@/features/auth/hooks/useCurrentUser";
 import { UserAvatarButton } from "@/features/user-profile/components/UserAvatarButton";
@@ -899,6 +904,261 @@ function DevToolsSection() {
 // 메인 페이지
 // ─────────────────────────────────────────────
 
+// ─────────────────────────────────────────────
+// 대시보드 미리보기 섹션
+// ─────────────────────────────────────────────
+
+type MockRowProps = { label: string; value: string; highlight?: boolean };
+
+function MockRow({ label, value, highlight }: MockRowProps) {
+  return (
+    <div className="flex items-center justify-between border-b border-slate-800/50 py-1.5 text-xs last:border-0">
+      <span className="text-slate-500">{label}</span>
+      <span className={highlight ? "font-semibold text-emerald-400" : "text-slate-300"}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+type MockBadgeProps = { status: "ok" | "warn" | "error"; label: string };
+
+function MockBadge({ status, label }: MockBadgeProps) {
+  const styles = {
+    ok: "bg-emerald-900/40 text-emerald-400 border-emerald-800",
+    warn: "bg-amber-900/40 text-amber-400 border-amber-800",
+    error: "bg-red-900/40 text-red-400 border-red-800",
+  } as const;
+  const dots = {
+    ok: "bg-emerald-400",
+    warn: "bg-amber-400",
+    error: "bg-red-400",
+  } as const;
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs ${styles[status]}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${dots[status]}`} />
+      {label}
+    </span>
+  );
+}
+
+type PreviewCardProps = {
+  title: string;
+  icon: React.ReactNode;
+  badge?: string;
+  children: React.ReactNode;
+};
+
+function PreviewCard({ title, icon, badge, children }: PreviewCardProps) {
+  return (
+    <div className="rounded-xl border border-slate-700/60 bg-slate-900/70 backdrop-blur-sm">
+      <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-3">
+        <span className="text-indigo-400">{icon}</span>
+        <span className="text-sm font-semibold text-slate-200">{title}</span>
+        {badge && (
+          <span className="ml-auto rounded-full bg-indigo-900/50 px-2 py-0.5 text-xs text-indigo-300 border border-indigo-800/50">
+            {badge}
+          </span>
+        )}
+      </div>
+      <div className="px-4 py-3">{children}</div>
+    </div>
+  );
+}
+
+function DashboardPreviewSection({ isAuthenticated }: { isAuthenticated: boolean }) {
+  return (
+    <div id="preview" className="scroll-mt-6 space-y-8 pt-4 border-t border-slate-800">
+      {/* 섹션 헤더 */}
+      <div className="text-center space-y-3">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-700/60 bg-indigo-900/30 px-3 py-1 text-xs font-medium text-indigo-300">
+          <Activity className="h-3 w-3" /> 대시보드 미리보기
+        </span>
+        <h2 className="text-2xl font-semibold text-slate-100 md:text-3xl">
+          로그인하면 이 모든 정보를 한눈에
+        </h2>
+        <p className="text-slate-400 text-sm max-w-xl mx-auto">
+          회원가입 후 대시보드에서 프로젝트 전체 상태를 실시간으로 확인하세요.
+          아래는 실제 대시보드 화면입니다.
+        </p>
+      </div>
+
+      {/* 카드 그리드 + 잠금 오버레이 */}
+      <div className="relative">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 pointer-events-none select-none">
+
+          {/* 사용자 정보 */}
+          <PreviewCard title="사용자 정보" icon={<User className="h-4 w-4" />} badge="Clerk">
+            <MockRow label="이름" value="홍길동" />
+            <MockRow label="이메일" value="hong@example.com" />
+            <div className="flex items-center justify-between border-b border-slate-800/50 py-1.5 text-xs">
+              <span className="text-slate-500">이메일 인증</span>
+              <MockBadge status="ok" label="인증됨" />
+            </div>
+            <div className="flex items-center justify-between border-b border-slate-800/50 py-1.5 text-xs">
+              <span className="text-slate-500">MFA</span>
+              <MockBadge status="ok" label="활성" />
+            </div>
+            <MockRow label="계정 생성" value="2026-01-15 09:30" />
+            <MockRow label="마지막 로그인" value="2026-05-14 08:22" />
+            <MockRow label="세션 만료" value="2026-05-14 18:22" />
+          </PreviewCard>
+
+          {/* 외부 서비스 상태 */}
+          <PreviewCard title="외부 서비스 상태" icon={<Activity className="h-4 w-4" />} badge="실시간">
+            {[
+              { name: "Clerk", desc: "All Systems Operational", status: "ok" as const },
+              { name: "Supabase", desc: "All Systems Operational", status: "ok" as const },
+              { name: "Neon", desc: "Operational", status: "ok" as const },
+            ].map((svc) => (
+              <div key={svc.name} className="flex items-center justify-between border-b border-slate-800/50 py-2 text-xs last:border-0">
+                <div>
+                  <p className="font-medium text-slate-200">{svc.name}</p>
+                  <p className="text-slate-500">{svc.desc}</p>
+                </div>
+                <MockBadge status={svc.status} label="정상" />
+              </div>
+            ))}
+          </PreviewCard>
+
+          {/* 브라우저 & Web */}
+          <PreviewCard title="브라우저 & Web 정보" icon={<Monitor className="h-4 w-4" />} badge="클라이언트">
+            <MockRow label="브라우저" value="Chrome 124" />
+            <MockRow label="OS" value="macOS" />
+            <MockRow label="화면 해상도" value="2560 × 1440" />
+            <MockRow label="네트워크" value="4G" />
+            <div className="flex items-center justify-between border-b border-slate-800/50 py-1.5 text-xs">
+              <span className="text-slate-500">온라인 상태</span>
+              <MockBadge status="ok" label="온라인" />
+            </div>
+            <MockRow label="localStorage" value="12개 (24.5 KB)" />
+            <MockRow label="쿠키 수" value="9개 (hover → 목록)" />
+          </PreviewCard>
+
+          {/* 데이터베이스 정보 */}
+          <PreviewCard title="데이터베이스 정보" icon={<Database className="h-4 w-4" />} badge="Supabase">
+            <div className="flex items-center justify-between border-b border-slate-800/50 py-1.5 text-xs">
+              <span className="text-slate-500">연결 상태</span>
+              <MockBadge status="ok" label="연결됨" />
+            </div>
+            <MockRow label="PostgreSQL" value="17.4" />
+            <MockRow label="DB 크기" value="8.5 MB" />
+            <MockRow label="활성 연결" value="3 / 100" />
+            <MockRow label="캐시 히트율" value="98.7%" highlight />
+            <MockRow label="업타임" value="14 days 06:22:31" />
+            <div className="mt-2 overflow-hidden rounded-lg border border-slate-800">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-slate-800/60 text-left">
+                    <th className="px-2 py-1.5 font-medium text-slate-500">테이블</th>
+                    <th className="px-2 py-1.5 text-right font-medium text-slate-500">행 수</th>
+                    <th className="px-2 py-1.5 text-right font-medium text-slate-500">크기</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { name: "sn_example", rows: "42", size: "48 kB" },
+                    { name: "sn_users", rows: "8", size: "16 kB" },
+                  ].map((t) => (
+                    <tr key={t.name} className="border-t border-slate-800">
+                      <td className="px-2 py-1.5 font-mono text-slate-300">{t.name}</td>
+                      <td className="px-2 py-1.5 text-right text-slate-400">{t.rows}</td>
+                      <td className="px-2 py-1.5 text-right text-slate-500">{t.size}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </PreviewCard>
+
+          {/* 프로젝트 & 시스템 */}
+          <div className="xl:col-span-2">
+            <PreviewCard title="프로젝트 & 시스템 정보" icon={<Server className="h-4 w-4" />} badge="빌드 정보">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <MockRow label="환경" value="development" />
+                  <MockRow label="Node.js" value="v22.14.0" />
+                  <MockRow label="Next.js" value="16.2.6" />
+                  <MockRow label="DB Provider" value="supabase" />
+                </div>
+                <div>
+                  <p className="mb-1 text-xs font-semibold text-slate-500 uppercase tracking-wide">주요 패키지</p>
+                  <div className="grid grid-cols-2 gap-x-3">
+                    {[
+                      ["next", "16.2.6"],
+                      ["react", "19.2.6"],
+                      ["@clerk/nextjs", "7.3.3"],
+                      ["hono", "4.12.18"],
+                      ["drizzle-orm", "0.45.2"],
+                      ["@tanstack/react-query", "5.100.10"],
+                      ["zod", "4.4.3"],
+                      ["typescript", "6.0.3"],
+                    ].map(([name, ver]) => (
+                      <div key={name} className="flex items-center justify-between py-0.5 text-xs">
+                        <span className="font-mono text-slate-400 truncate">{name}</span>
+                        <span className="font-mono text-indigo-400 shrink-0 pl-1">{ver}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </PreviewCard>
+          </div>
+        </div>
+
+        {/* 잠금 오버레이 */}
+        {!isAuthenticated && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-slate-950/70 backdrop-blur-[2px]">
+            <div className="flex flex-col items-center gap-4 rounded-2xl border border-slate-700 bg-slate-900/95 px-8 py-7 shadow-2xl text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-600/20 border border-indigo-600/40">
+                <Lock className="h-6 w-6 text-indigo-400" />
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-base font-semibold text-slate-100">
+                  내 실제 데이터로 확인하려면 로그인하세요
+                </p>
+                <p className="text-sm text-slate-400">
+                  위 정보는 미리보기입니다. 로그인하면 실제 프로젝트 데이터가 표시됩니다.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500"
+                >
+                  무료로 시작하기 <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center rounded-lg border border-slate-600 px-5 py-2.5 text-sm font-medium text-slate-300 transition hover:border-slate-400 hover:text-white"
+                >
+                  로그인
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 이미 로그인한 경우 CTA */}
+      {isAuthenticated && (
+        <div className="flex justify-center">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-indigo-500"
+          >
+            내 대시보드 열기 <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// 네비게이션
+// ─────────────────────────────────────────────
+
 const NAV_ITEMS = [
   { href: "#step-1", label: "1. 설치" },
   { href: "#step-2", label: "2. 인증" },
@@ -907,6 +1167,7 @@ const NAV_ITEMS = [
   { href: "#step-5", label: "5. 실행" },
   { href: "#step-6", label: "6. Webhook" },
   { href: "#architecture", label: "참고" },
+  { href: "#preview", label: "대시보드 미리보기" },
 ];
 
 export default function Home() {
@@ -1026,6 +1287,9 @@ export default function Home() {
             <DevToolsSection />
           </div>
         </div>
+
+        {/* 대시보드 미리보기 */}
+        <DashboardPreviewSection isAuthenticated={isAuthenticated} />
       </div>
     </main>
   );

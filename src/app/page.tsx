@@ -49,13 +49,17 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function CodeBlock({ code }: { code: string }) {
+function CodeBlock({ code, wrap = false }: { code: string; wrap?: boolean }) {
   return (
     <div className="relative rounded-lg border border-slate-800 bg-slate-950">
       <div className="absolute right-2 top-2">
         <CopyButton text={code} />
       </div>
-      <pre className="overflow-x-auto p-4 pr-20 text-sm text-slate-300">
+      <pre
+        className={`p-4 pr-20 text-sm text-slate-300 ${
+          wrap ? "whitespace-pre-wrap break-all" : "overflow-x-auto"
+        }`}
+      >
         <code>{code}</code>
       </pre>
     </div>
@@ -165,10 +169,10 @@ function Step1Install() {
           <CodeBlock code={"git clone <repository-url>\ncd <project-name>"} />
         </SubStep>
         <SubStep number={2} title="패키지 설치">
-          <CodeBlock code="npm install" />
+          <CodeBlock code="pnpm install" />
         </SubStep>
         <SubStep number={3} title="정적 점검 (선택)">
-          <CodeBlock code="npm run lint" />
+          <CodeBlock code="pnpm lint" />
         </SubStep>
         <InfoBox type="warning">
           ⚠️ 아직 <code className="font-mono">.env.local</code>을 설정하지 않았으므로 개발 서버는{" "}
@@ -403,7 +407,7 @@ function Step3Database() {
                 <strong className="text-slate-300">Connection Details</strong> →{" "}
                 <strong className="text-slate-300">Pooled connection</strong> ON
               </p>
-              <CodeBlock code={'NEON_DATABASE_URL="postgresql://[user]:[password]@[host]-pooler.[region].aws.neon.tech/[dbname]?sslmode=require&channel_binding=require"'} />
+              <CodeBlock code={'NEON_DATABASE_URL="postgresql://[user]:[password]@[host]-pooler.[region].aws.neon.tech/[dbname]?sslmode=require&channel_binding=require"'} wrap />
               <p className="text-xs text-slate-500">
                 호스트에 <code>-pooler</code> 접미사가 포함되어 있어야 합니다.
               </p>
@@ -431,7 +435,7 @@ function Step3Database() {
               </p>
               <CodeBlock
                 code={
-                  "npm install -g neonctl\n\n# 인증\nneonctl auth\n\n# 개발 브랜치 생성\nneonctl branches create --name dev"
+                  "pnpm add -g neonctl\n\n# 인증\nneonctl auth\n\n# 개발 브랜치 생성\nneonctl branches create --name dev"
                 }
               />
             </SubStep>
@@ -599,7 +603,7 @@ function Step5DevServer() {
       />
       <div className="ml-14 space-y-5">
         <SubStep number={1} title="개발 서버 시작">
-          <CodeBlock code="npm run dev" />
+          <CodeBlock code="pnpm dev" />
           <p className="text-xs text-slate-400">
             브라우저에서{" "}
             <code className="text-indigo-300">http://localhost:3000</code> 접속
@@ -848,14 +852,14 @@ function DevToolsSection() {
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-3">
-          <p className="text-sm font-medium text-slate-200">주요 npm 스크립트</p>
+          <p className="text-sm font-medium text-slate-200">주요 pnpm 스크립트</p>
           <div className="space-y-2">
             {[
-              { cmd: "npm install", desc: "패키지 설치" },
-              { cmd: "npm run dev", desc: "개발 서버 실행" },
-              { cmd: "npm run build", desc: "프로덕션 빌드" },
-              { cmd: "npm run lint", desc: "ESLint 정적 점검" },
-              { cmd: "npx drizzle-kit studio", desc: "DB 시각화 (Drizzle Studio)" },
+              { cmd: "pnpm install", desc: "패키지 설치" },
+              { cmd: "pnpm dev", desc: "개발 서버 실행" },
+              { cmd: "pnpm build", desc: "프로덕션 빌드" },
+              { cmd: "pnpm lint", desc: "ESLint 정적 점검" },
+              { cmd: "pnpm drizzle-kit studio", desc: "DB 시각화 (Drizzle Studio)" },
             ].map(({ cmd, desc }) => (
               <div
                 key={cmd}
